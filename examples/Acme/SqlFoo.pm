@@ -17,6 +17,10 @@ class Acme::SqlFoo extends Acme::BaseObject with Elevator::Model::Roles::DbTable
     data id           => (isa => 'Int');
     data some_integer => (isa => 'Int');
     data some_string  => (isa => 'Str');
+    # classes can work with $obj->bar() automatically as an object, note type not isa
+    # though you must use bar_id in constructors.  You may use "field => N" if the database
+    # field name is not bar, for instance, to alias bar_id if that's your convention.
+    data bar          => (type => 'Acme::SqlBar');
 
     # it's ok to have non-database fields too
     attr blippy       => (isa => 'Str');

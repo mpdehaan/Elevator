@@ -1,4 +1,2 @@
-# The demo tests use a SQLite database.  Create one with sqlite3 and add the following tables.
-
-CREATE TABLE NoSqlFoo (id INT, some_integer INT, some_string TEXT);
-
+CREATE TABLE SqlFoo (id INTEGER PRIMARY KEY AUTOINCREMENT, some_integer INTEGER, some_string TEXT, bar INTEGER);
+CREATE TABLE SqlBar (id INTEGER PRIMARY KEY AUTOINCREMENT, some_integer INTEGER, some_string TEXT);

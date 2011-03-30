@@ -321,7 +321,18 @@ sub insert {
     my $statement = $self->_prepare_statement($insert);
     my $table = $self->table_name();
     $statement->execute(@bind) or croak("database insert failed ($? $!), " . Data::Dumper::Dumper $insert . " VALUES= " . Data::Dumper::Dumper \@bind);
-    my $inserted = $dbh->last_insert_id(undef, undef, $table, undef);
+    my $inserted = undef;
+    if ($dbh->can('sqlite_last_insert_rowid')) {
+       # sqlite seems to need special handling
+       # last insert rowid, or the DBI version don't work (grr)
+       my $lookup = "SELECT * FROM SQLITE_SEQUENCE WHERE name='$table'";
+       my $all = $dbh->selectall_arrayref($lookup);
+       $inserted = $all->[0][1];
+
+    } else {
+       # this at least works with MySQL ... may need changes elsewhere.
+       $inserted = $dbh->last_insert_id(undef, undef, $table, undef);
+    }  
     if ($self->meta->has_attribute('id')) {
         croak("failed to get insertion id") unless defined $inserted;
         $self->id($inserted);
