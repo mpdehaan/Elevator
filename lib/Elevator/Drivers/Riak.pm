@@ -55,52 +55,8 @@ class Elevator::Drivers::Riak {
     }
 
     # return a list of hash structures for a search.
-    #
-    # usage is very specific to the type of Driver.  Here, Riak uses it's Lucene
-    # compatible map_reduce syntax.  For efficiency, we'll probably also provide
-    # a way to do distributed MR in Erlang, but ... not here/yet.
-    # 
-    #      my $array_ref = $obj->find_all({
-    #           js_map => ...
-    #           js_reduce => ...
-    #      });
-    #
-
     action find_by_criteria($bucket_name, $criteria) {
-
-        # FIXME: die if search_string is missing
-        #        also rename, as it's not a string, but a list?
-        # TODO:  can key_filter be optional?  how to express any?  *?
-        my $search_string = $criteria->{'search_filter'} || '*'; 
-        my $key_filter    = $criteria->{'key_filter'};  
-
-        # FIXME: do we even need to specify the map?
-        my $packet = Elevator::Model::Forge->instance->json->encode({
-            inputs => $bucket_name,  # FIXME: avoid list keys operation!
-            query  => [
-                { 
-                  'map'    => {
-                    'language' => 'javascript',
-                    'source'   => $criteria->{js_map},
-                  }
-                },
-                #{ 
-                #  'reduce' => { 
-                #    'language' => 'javascript',
-                #    'source'   => $criteria->{js_reduce} 
-                #  }
-                #} 
-            ]
-        });
-        warn "PACKET: $packet\n\n"; 
-
-        my $url = $self->_map_reduce_url();
-        my $response = $self->_agent()->post($url, Content => $packet);
-        unless ($response->is_success()) {
-             warn "Riak response: " . $response->content();
-             die $response->status_line();
-        }  
-        return {};
+        die "riak search not implemented yet";
     }
 
     # return a single entry after specifying it's bucket key
@@ -119,8 +75,6 @@ class Elevator::Drivers::Riak {
              Content => $obj->to_json_str()
          );
          unless ($response->is_success()) {
-             # FIXME: use Elevator::Err::NoSqlError
-             # and also include the Response content.
              warn "Riak response: " . $response->content();
              die $response->status_line();
          }
