@@ -1,4 +1,14 @@
 # example class to demo the NoSql driver
+#
+# for this test to work, sqlite3 dbfile
+# and:
+#    CREATE TABLE NoSqlFoo (id INT, some_integer INT, some_string TEXT);
+#
+# this demo does not illustrate associated classes yet.  It should.
+# i.e.
+#    data other_foo => (type => 'Acme::OtherFoo')
+#
+# which is a main point of this data layer.
 
 use MooseX::Declare;
 
@@ -6,16 +16,33 @@ class Acme::SqlFoo extends Acme::BaseObject with Elevator::Model::Roles::DbTable
  
     use Acme::BaseObject; 
     use Method::Signatures::Simple name => 'action';
+    use DateTime;
 
+    # database fields are all marked with 'data'
+    data id           => (isa => 'Int');
     data some_integer => (isa => 'Int');
     data some_string  => (isa => 'Str');
 
-    # where is the table?
+    # it's ok to have non-database fields too
+    attr blippy       => (isa => 'Str');
+    lazy foo          => (isa => 'Str');
+
+    # Moose has constructors, if you want them
+    action BUILD() {
+        # attributes are already set when we get here, hence no parameters.
+    }
+
+    # this string is only build once, cool, eh?
+    action _make_foo() {
+        return DateTime->now();
+    }
+
+    # where is the table? (REQUIRED)
     action primary_table() {
         return "SqlFoo";
     }
 
-    # use memcache for this table?  
+    # use memcache for this table?  (DEFAULT: 0)
     action is_memcache_enabled() {
         return 1;
     }

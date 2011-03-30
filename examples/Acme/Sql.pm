@@ -21,7 +21,7 @@ class Acme::Sql extends Elevator::Drivers::Sql {
     use DBI;
 
     action database_handle() {
-        return DBI->connect("dbi:SQLite2:dbname=dbfile","","");
+        return DBI->connect("dbi:SQLite:dbname=dbfile","","");
     }
 
 }
