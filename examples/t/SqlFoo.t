@@ -23,7 +23,7 @@ sub test_go : Test(6) {
    # verify that we can fetch an object by key
    my $fetched = Acme::SqlFoo->find_one({ some_string => 'narf' });
    ok(defined $fetched, "got an object back from by_key");
-   is($fetched->to_json_str(), $foo->to_json_str(), "same data sent as stored");
+   is($fetched->some_string(), $foo->some_string(), "same data sent as stored");
 
    # verify that we can delete what we've inserted
    # also that requesting an object that is not there returns undef
