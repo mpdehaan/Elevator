@@ -38,23 +38,23 @@ class Elevator::Model::Forge {
     has 'datetime_formatter_no_spaces'  => (is => 'rw', lazy => 1, builder => '_make_datetime_formatter');
     has 'sql_abstract'                  => (is => 'rw', lazy => 1, builder => '_make_sql_abstract');
     
-    sub _make_json {
+    action _make_json {
        return JSON::XS->new()->canonical(1);
     }
     
-    sub _make_now {
+    action _make_now {
        return DateTime->now();
     }
     
-    sub _make_md5 {
+    action _make_md5 {
        return Digest::MD5->new();
     }
     
-    sub _make_sql_abstract {
+    action _make_sql_abstract {
        return SQL::Abstract->new();
     }
     
-    sub _make_datetime_formatter {
+    action _make_datetime_formatter {
        return DateTime::Format::Strptime->new(
            pattern  => DB_DATETIME_FORMAT,
            on_error => 'croak',
@@ -62,7 +62,7 @@ class Elevator::Model::Forge {
        );
     }
     
-    sub _make_datetime_formatter_no_spaces {
+    action _make_datetime_formatter_no_spaces {
        return DateTime::Format::Strptime->new(
            pattern  => DB_DATETIME_FORMAT_NO_SPACES,
            on_error => 'croak',

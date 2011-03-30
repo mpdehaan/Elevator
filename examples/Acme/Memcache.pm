@@ -18,8 +18,8 @@ class Acme::Memcache extends Elevator::Drivers::Memcache {
     use Method::Signatures::Simple name => 'action';
     use Elevator::Model::BaseObject;
 
-    action server() {
-        die 'not implemented yet';
+    action servers() {
+        return [ qw/127.0.0.1/ ];
     }
 
 }

@@ -38,11 +38,6 @@ use Data::Dumper;
 
 #FIXME: update all methods to use action rather than sub
 
-# normally we want to import stuff like this in Elevator::Include
-# but this runs too early it seems
-use Elevator::Model::Util::Memcache;
-our $MEMCACHER = Elevator::Model::Util::Memcache->handle();
-
 # classes that use this Mixin must define the following methods
 # to_datastruct/from_datastruct are provided by Elevator::Model::BaseObject
 # and should not have to be resupplied.
@@ -116,19 +111,20 @@ sub table_name {
     return $saved;
 }
 
+sub _database_handle() {
+    my $self = shift();
+    return $self->sql_driver()->database_handle();
+}
+
 # save prepared statements to not prepare them multiple times.
 sub _prepare_statement {
     my ($self, $sql) = @_;
     my $sth = $PREPARED_STATEMENTS->{$sql};
     unless (defined $sth) {
-        $sth = $self->_database_handle->prepare($sql);
+        $sth = $self->_database_handle()->prepare($sql);
         $PREPARED_STATEMENTS->{$sql} = $sth; 
     }
     return $sth;
-}
-
-sub _database_handle {
-    return Elevator::Model::Util::Utils::database_handle();
 }
 
 # produces a key for object hash lookup based on criteria
@@ -244,7 +240,7 @@ sub _memcache_load {
     my ($self, $cache_key, $table) = @_;
     # see if we have a cache hit
     my $memdata;
-    if ($memdata = $MEMCACHER->retrieve($cache_key)) {
+    if ($memdata = $self->memcache_driver()->retrieve($cache_key)) {
         my $result              = [];
         my ($expires_on, @rows) = @{$memdata};
         my $tolerance           = $self->memcache_timeout();
@@ -289,7 +285,7 @@ sub _update_memcache {
      # storing this in the actual value is kind of redundant, but allows us to at least
      # inquire as to the age.  Perhaps memcache allows us to do this as well.  Remove if so.
      my $mc_data = [ Elevator::Model::Forge->instance->now->epoch() + $tolerance , @elements];
-     $MEMCACHER->store($cache_key, $mc_data, $tolerance);
+     $self->memcache_driver()->store($cache_key, $mc_data, $tolerance);
 }
 
 ###################################################################
@@ -668,7 +664,7 @@ sub invalidate_memcache {
    }
 
    foreach my $invalid_key (@{$keys_to_invalidate}) {
-       $MEMCACHER->delete($invalid_key);
+       $self->memcache_driver()->delete($invalid_key);
    }
    
 }

@@ -18,8 +18,10 @@ class Acme::Sql extends Elevator::Drivers::Sql {
     use Method::Signatures::Simple name => 'action';
     use Elevator::Model::BaseObject;
 
+    use DBI;
+
     action database_handle() {
-        return 'not implemented yet';
+        return DBI->connect("dbi:SQLite2:dbname=dbfile","","");
     }
 
 }
