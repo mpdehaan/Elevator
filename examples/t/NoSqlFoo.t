@@ -60,7 +60,16 @@ sub test_go : Test(5) {
    $self->_test_object('egad','c')->commit();
    $fetched = Acme::NoSqlFoo->by_key('troz');
 
-   # TODO: verify that we can search for just one element
+   # verify we can do a batch find.
+   $self->_test_object('foo','x')->commit();
+   $self->_test_object('bar','x')->commit();
+   $self->_test_object('baz','x')->commit();
+   $self->_test_object('glorp','x')->commit();
+   my $all = Acme::NoSqlFoo->find_all({ some_string => 'x' });
+   #foreach my $item (@$all) {
+   #    warn $item->to_json_str();
+   #} 
+   ok(scalar @$all >= 4, "sufficient results returned");
 
    # TODO: verify that we can run prepared map_reduce queries
 
