@@ -2,6 +2,7 @@
 
 =head1 CONTENTS
 
+Cached::Memcached::Fast
 DateTime
 DateTime::Format::Striptime
 Digest::MD5

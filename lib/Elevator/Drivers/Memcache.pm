@@ -1,30 +1,22 @@
-=pod
-
-=head1 NAME
-
-Elevator::Drivers::Memcache
-
-=head1 DESCRIPTION
-
-Memcache driver that provides a connection to Memcache for use in classes that use the
-DbTable role.
-
-Subclass this to provide a proper server address
-
-=cut
-##########################################################################
+# Elevator::Drivers::Memcache
+# 
+# Memcache driver that provides a connection to Memcache for use in classes that use the
+# DbTable role.
+# 
+# Subclass this to provide a proper server address
+# (and maybe if you want to tune memcache settings)
     
 use MooseX::Declare;
 
 class Elevator::Drivers::Memcache {
-
-    our $memd = undef; # shared memcache handle
-
+    
     use Method::Signatures::Simple name => 'action';
     use Cache::Memcached::Fast;
 
-    # defaults should be overriden in organization-specific subclasses:
-    # see Cache::Memcached::Fast for documentation...
+    our $memd = undef; # shared memcache handle
+
+    # defaults can/should be overriden in organization-specific subclasses:
+    # see Cache::Memcached::Fast for documentation...  
 
     action servers() {
         return [ qw/127.0.0.1/ ];

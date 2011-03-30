@@ -1,28 +1,15 @@
-=pod
-
-=head1 NAME
-
-Elevator::ModelTypes
-
-=head1 DESCRIPTION
-
-Types for all Elevator Moose classes.
-
-=head1 SYNOPSIS
-
-Types in Moose are essentially global.   These are loaded automatically by Elevator::ModelBaseObject.
-
-See http://search.cpan.org/~drolsky/Moose-1.09/lib/Moose/Manual/Types.pod
-
-=cut
-##########################################################################
+# Elevator::ModelTypes
+#
+# Types for all Elevator Moose classes.
+# 
+# Types in Moose are essentially global.   These are loaded automatically by Elevator::ModelBaseObject.
+# 
+# See http://search.cpan.org/~drolsky/Moose-1.09/lib/Moose/Manual/Types.pod
 
 use Moose;
 use Moose::Util::TypeConstraints;
 use Readonly;
-
 use DateTime;
-# note: we seem to use this to round in v4, may not be most efficient.
 
 ##########################################################################
 # 'Date' holds DateTime perl objects, but also knows how to accept strings
@@ -31,6 +18,9 @@ use DateTime;
 # should ONLY think in terms of datetime elsewhere, it should *not* do
 # it's own parsing and conversions.  The controller/view should care
 # about timezones, the model thinks in GMT.
+# 
+# TL/DR:   data foo => (isa => 'Date', coerce => 1)
+# allows you to treat database time values as DateTimes
 
 subtype 'Date' => as class_type 'DateTime';
   
@@ -47,16 +37,17 @@ coerce 'Date'  => from 'Int' => via {
                             return Elevator::Model::Forge->instance->datetime_formatter->parse_datetime($value);
                         }
                         or do {
-                            # this is hideous, but timed assignments sometimes produce bad log strings
-                            # so let's try another format since we have to deal with legacy
-                            # data in the DB.
+                            # this is hideous, but accomodate a few possible database time formats.
                             return Elevator::Model::Forge->instance->datetime_formatter_no_spaces->parse_datetime($value);
                         };
                   };
 
 
 # by default the Moose bool will accept things with Perl truthiness, however we also
-# use 'y' or 'n' in the database.  Make those string values work too.
+# use 'y' or 'n' in databases sometimes.  Make those string values work too.
+#
+# ex: 
+# data foo=> (isa => 'Bool', coerce => 1);
 
 coerce 'Bool' => from 'Str' => via {
                      $_ = uc($_);
@@ -67,6 +58,4 @@ coerce 'Bool' => from 'Str' => via {
                  };                   
                    
                    
-##########################################################################
-                    
 1;
