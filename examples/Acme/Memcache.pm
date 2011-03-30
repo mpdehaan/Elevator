@@ -18,7 +18,7 @@ class Acme::Memcache extends Elevator::Drivers::Memcache {
     use Method::Signatures::Simple name => 'action';
     use Elevator::Model::BaseObject;
 
-    action servers() {
+    action server() {
         die 'not implemented yet';
     }
 
