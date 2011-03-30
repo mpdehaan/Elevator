@@ -2,19 +2,22 @@
 
 =head1 CONTENTS
 
-SQL::Abstract
+DateTime
+DateTime::Format::Striptime
+Digest::MD5
+IO::All
+JSON::XS
+Method::Signatures::Simple
+MongoDB
 Moose
 Moose::Role
 Moose::Util::TypeConstraints
 MooseX::Declare
-Method::Signatures::Simple
-JSON::XS
-DateTime
-DateTime::Format::Striptime
+SQL::Abstract
 
 =head1 Elevator::Bundle::Elevator
 
-Prereqs for Elevator.  WIP, add new modules here.
+Prerequisite modules for Elevator.  Add new modules here.
 
 =cut
 

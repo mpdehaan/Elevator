@@ -2,17 +2,19 @@ Elevator
 ========
 
 Elevator is a object oriented pluggable data-layer for Perl, built on top of MooseX::Declare.
-It ensures objects are easy to use (not so easy in Perl) and basically acts as a lightweight
-ORM.   Elevator is there to make your own objects, by subclassing, it is not a library that
-you use directly.
+
+Elevator makes it easy to do data-driven OO.   Elevator is a scaffolding for making and using
+objects that lets you stop thinking about how they are stored.  You work with elevator by subclassing it,
+it is not a module that you just instantiate instances of.
 
 Elevator objects all have built-in ability to load and save themselves to JSON or raw perl datastructures.
-Additional roles may be added to objects to allow them to be serialized to-and-from a database
-(with optional memcache fronting), or a pluggable NoSQL datastore.  It is then easily possible to swap
-out databases or move objects between SQL and NoSQL datastores.
+Additional roles may be added to objects to allow them to be serialized to-and-from a database, memcache,
+or NoSql.
 
 For instance, one could simultaneously use multiple NoSQL datastores without having to know the quirks of either,
 or use sqlite locally and MySQL on a different environment.
+
+It's also much lighter than most ORMs.  Code looks like code.  There's no configuration.
 
 Starting out
 ============
@@ -25,20 +27,18 @@ your application will then inherit from your new BaseObject subclass(es).
 The examples directory shows how to do this and includes a test program that drives some of
 these objects.
 
+Just do what the examples do.
+
 Additional capabilities
 =======================
 
 Elevator provides some shorthand ('data', 'attr', and 'lazy') around Moose attribute boilerplate.
-Attributes must be flagged with 'data' to show up in the serializer, and because they are based
-on the serializer, the NoSql or Sql drivers.   Lazy is a shortcut around Moose's excellent lazy
-loading, and attr is just a simple wrapper around 'has'.  This is explained in the documentation
-for BaseObject.
+Attributes must be flagged with 'data' to show up in the serializer or database/NoSql saving.
 
-Elevator also provides some basic error classes for raising typed exceptions in Moose, along with
-an ErrorCatcher module for intercepting them and producing reasonable stack traces.  This allows
-for installing a global error handler around a program with polymorphic error handling behavior.
-Use of the error handling piece of Elevator is optional though Elevator does use these exception
-objects internally.  Also see the examples directory for a demo of a global error handling loop.
+Lazy is a shortcut around Moose's excellent lazy loading, and attr is a thin wrapper around Moose's has.
+You should really read the Moose tutorials to fully understand things.
+
+Elevator does not hide Moose from you, it just makes some things simpler.
 
 Documentation
 =============
@@ -54,6 +54,14 @@ Prerequisite libraries are listed in the Bundle directory.
 Otherwise, just make sure Elevator if findable via PERL5LIB.
 CPAN package pending.
 
+Testing
+=======
+
+run "make" in a checkout to run the full test battery.
+
+Tests will assume MongoDB and sqlite are available, and will try to hit memcache all on
+localhost.  If they are not available, you may have some minor things to change.
+
 Site/App Specifics
 ==================
 
@@ -61,7 +69,8 @@ Many features specific to the original implementation have been removed to make 
 general purpose module.  These include typed exception handling and specialized sharding
 support.  A generalized method of supporting these for existing sites and web frameworks
 didn't make sense, so you may wish to add these in your own way by subclassing any
-of the existing classes.
+of the existing classes.  Sharding is still possible on a class-by-class basis, but is not
+yet really supported as a 1st class concept.  
 
 License
 =======
