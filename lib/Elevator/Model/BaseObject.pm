@@ -200,5 +200,17 @@ class Elevator::Model::BaseObject with Elevator::Model::Roles::Serializable {
         die "must subclass this to use";
     }
 
+    # the object cache is an optimization that returns the same object for duplications
+    # of the same queries.  It is appropriate for web requests, provided the object
+    # cache is explicitly cleared at the begining of each web request, and then can
+    # reduce SQL query volume by huge amounts.  It also prevents hits to memcache
+    # as this is a RAM optimization.  However, it should almost never be used
+    # in tests, or command line executation where something needs to be re-queried after
+    # it is modified.  Turn on only when needed, it can create leaks if used incorrectly.
+    # read Model/Roles/DbTable.pm for more details.
+
+    action enable_object_cache() {
+        return 0;
+    }
 
 }

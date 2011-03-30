@@ -1,13 +1,8 @@
 # example class to demo the NoSql driver
 #
-# for this test to work, sqlite3 dbfile
-# and:
-#    CREATE TABLE NoSqlFoo (id INT, some_integer INT, some_string TEXT);
-#
-# this demo does not illustrate associated classes yet.  It should.
+# FIXME: this demo does not illustrate associated classes yet.  It should.
 # i.e.
 #    data other_foo => (type => 'Acme::OtherFoo')
-#
 # which is a main point of this data layer.
 
 use MooseX::Declare;

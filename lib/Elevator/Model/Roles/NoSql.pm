@@ -68,7 +68,7 @@ sub find_all {
 
     my ($self, $criteria) = @_; 
     my $result = [];
-    die Elevator::Err::InternalError->new(text => "criteria is not a ref") unless ref($criteria);
+    die "criteria is not a ref" unless ref($criteria);
     
     my $raw_data = $self->nosql_driver->find_by_criteria($self->bucket_name(), $criteria);
     unless (ref ($raw_data)) {

@@ -1,33 +1,21 @@
-=pod
-
-=head1 NAME
-
-Elevator::Model::Roles::DbTable
-
-=head1 DESCRIPTION
-
-A Moose role adding Database powers to an existing class.
-
-Assumes all constructor parameters correspond to database
-field names when they use the "Data" trait.
-
-=head1 SYNOPSIS
-
-   with 'DbTable'
-
-   my $obj  = Elevator::Model::SomeObject->new(p1 => 'x', p2=> 'y');
- 
-   Elevator::Model::SomeObject->find_one($criteria); # see SQL::Abstract for what's legal
-   $obj->find_all($criteria);
-   $obj->commit();
-   $obj->delete();
-
-   my $user = Elevator::Model::User->retrieve({ username => 'mdehaan@webassign' });
-   $user->ssn('3');
-   $user->commit();
-
-=cut
-##########################################################################
+# A Moose role adding Database powers to an existing class.
+# 
+# Assumes all constructor parameters correspond to database
+# field names when they use the "Data" trait.
+#
+#
+#   with 'DbTable'
+#
+#   my $obj  = Elevator::Model::SomeObject->new(p1 => 'x', p2=> 'y');
+# 
+#   Elevator::Model::SomeObject->find_one($criteria); # see SQL::Abstract for what's legal
+#   $obj->find_all($criteria);
+#   $obj->commit();
+#   $obj->delete();
+#
+#   my $user = Elevator::Model::User->retrieve({ username => 'mdehaan@webassign' });
+#   $user->ssn('3');
+#   $user->commit();
 
 package Elevator::Model::Roles::DbTable;
 use Moose::Role;
@@ -35,8 +23,6 @@ use Method::Signatures::Simple name => 'action';
 use Carp;
 use JSON::XS;
 use Data::Dumper;
-
-#FIXME: update all methods to use action rather than sub
 
 # classes that use this Mixin must define the following methods
 # to_datastruct/from_datastruct are provided by Elevator::Model::BaseObject
@@ -47,22 +33,12 @@ requires 'to_datastruct';
 requires 'from_datastruct';
 requires 'selection_criteria';
 
-# this is used by the test code only, when an insert is made
-# the function is called with $self as a parameter, allowing the
-# insert to be later undone.  Later we may want to allow
-# installation of multiple hooks.  There is no analog for undoing an
-# update, so the main goal here is just to keep the DB from
-# growing (much).  Test databases are a better solution and once
-# we have them we can consider gutting this.
-has '__insert_hook' => (is => 'rw', isa => 'CodeRef|Undef', init_arg => undef);
-
 # when we call $obj->delete() it's important that a second call
 # to delete not do anything, especially for test purposes.
-# set by DbTable.pm
 has '__is_deleted'  => (is => 'rw', isa => 'Bool', default => 0, init_arg => undef);
 
 # flags whether we think the object has come from the database.  Used
-# to do commit() in DbTable more efficiently.  Used by DbTable.pm
+# to do commit() in DbTable more efficiently.  
 # no need to set manually.
 has '__from_database' => (is => 'rw', isa => 'Bool', default => 0, init_arg => undef);
 
@@ -75,9 +51,7 @@ has '__table_name' => (is => 'rw', isa => 'Str', init_arg => undef);
 our $PREPARED_STATEMENTS = {};
 
 # hold onto produced objects based on criteria from selection
-# FIXME: this (should) need to be explicitly enabled to not affect tests.
-# this prevents creating lots of duplicate new() objects and basic DB
-# re-access.  
+# this must be explicitly enabled and is not on by default!
 local our $OBJECT_CACHE = {};
 
 ###################################################################
@@ -88,8 +62,8 @@ local our $OBJECT_CACHE = {};
 =item table_name
 
 Returns the table name to be used with the DB utility functions.
+
 subclasses must override if they want the stock DB code in
-DbTable.pm to work.   Think of it as a virtual function.
 
 The function primary_table must be implemented.
 
@@ -188,16 +162,17 @@ sub find_all {
     my $memcache_should_update = 0;
 
     my $class = ref( $self ) ? ref( $self ) : $self;
-    # if in the object cache already (runtime) just use that
+
+    # if in the object cache already, consider using that if so enabled.
+    # if the object cache is disabled, this will not do anything.
     unless( $OBJECT_CACHE->{$class} ) {
         $OBJECT_CACHE->{$class} = {};
     };
-    
     my $cache_value = $OBJECT_CACHE->{$class}->{$cache_key};
 
     # object caching is disabled in test hooks and scripts by default
-    # it must be explicitly enabled, as is done in Elevator/phoenix.pl
-    if ($Elevator::Model::Util::Utils::OBJECT_CACHE_ENABLED && defined $cache_value) {
+    # it must be explicitly enabled by a flag
+    if ($self->enable_object_cache() && defined $cache_value) {
         return $cache_value;
     }
 
@@ -221,15 +196,20 @@ sub find_all {
     }
 
     # update object cache always, update memcache if so marked.
-    $OBJECT_CACHE->{$class}->{$cache_key} = $result;
+    if ($self->enable_object_cache()) {
+        $OBJECT_CACHE->{$class}->{$cache_key} = $result;
+    }
+
     if ($self->is_memcache_enabled() && $memcache_should_update) {
         $self->_update_memcache($cache_key, $table, $result);
     }
 
+    # this shouldn't happen unless there's a major error, we expect an empty list on no hits
     unless ($result) {
-       die 'find one returned a null result.';
+       die 'find_all returned a null result.';
     } 
     return $result;
+
 }
 
 # attempts to load certain tables from memcache.  Returns the a tuple of (mc_value, update_flag).
@@ -288,23 +268,14 @@ sub _update_memcache {
      $self->memcache_driver()->store($cache_key, $mc_data, $tolerance);
 }
 
-###################################################################
-=pod
 
-=over
-
-=item find_one
-
-Works like find_all but returns only a single object.  Warns if 
-the critera was too vague and returned more than one object.  
-
-Parameters passed for $criteria are those valid to SQL::Abstract select
-statements. 
-
-=back
-
-=cut
-###################################################################
+# find_one
+#
+# Works like find_all but returns only a single object.  Warns if 
+# the critera was too vague and returned more than one object.  
+# 
+# Parameters passed for $criteria are those valid to SQL::Abstract select
+# statements. 
 
 sub find_one {
     my $self     = shift();
@@ -322,20 +293,11 @@ sub find_one {
     return $result->[0];
 }
 
-###################################################################
-=pod
-
-=over
-
-=item insert_statement
-
-Produces an insert statement and bind vars.   Subclasses can override this if they
-wish, they should not override insert, however.
-
-=back
-
-=cut
-##################################################################  
+# insert_statement
+# 
+# Produces an insert statement and bind vars.   Subclasses can override this if they
+# wish, they should not override insert, however.
+# 
 
 sub insert_statement {
     my $self = shift();
@@ -343,24 +305,14 @@ sub insert_statement {
     return $sql->insert($self->table_name(), $self->to_datastruct(), {});
 }
 
-###################################################################
-=pod
-
-=over
-
-=item insert
-
-Performs a SQL insert of the object in present state.   Returns the
-inserted id.  NOTE: in practice, don't call insert explicitly, use
-commit.
-
-Subclasses needing custom behavior should not override this, they
-should override insert_statement.   
-
-=back
-
-=cut
-###################################################################
+# insert
+# 
+# Performs a SQL insert of the object in present state.   Returns the
+# inserted id.  NOTE: in practice, don't call insert explicitly, use
+# commit.
+# 
+# Subclasses needing custom behavior should not override this, they
+# should override insert_statement, though this hasn't really come up either.
 
 sub insert {
     my $self = shift();
@@ -379,50 +331,27 @@ sub insert {
         # this is a degenerate table with no id!  We'll just set inserted to -1
         $inserted = -1;
     }
-    # if we're running from test code, we may want to notify
-    # the test hooks that we'll want to cleanup this later.
-    my $callback = $self->__insert_hook();
     # mark that the object has been through a database transaction
     $self->__from_database(1);
     $self->invalidate_object_cache();
-    $callback->($self) if defined $callback;
     return $inserted;
 }
 
 
-###################################################################
-=pod
-
-=over
-
-=item actual_table_name
-
-Return the name of the table
-
-=back
-
-=cut
-###################################################################
+# actual_table_name
+# 
+# Return the name of the table
 
 sub actual_table_name {
     my $self = shift();
     return $self->primary_table();
 }
 
-###################################################################
-=pod
 
-=over
-
-=item update_statement
-
-Produces an update statement and bind vars.   Subclasses can override this if they
-wish.
-
-=back
-
-=cut
-################################################################## 
+# update_statement
+# 
+# Produces an update statement and bind vars.   Subclasses can override this if they
+# wish (hasn't come up yet).
 
 sub update_statement {
     my $self = shift();
@@ -434,20 +363,10 @@ sub update_statement {
 }
 
 
-###################################################################
-=pod
-
-=over
-
-=item update
-
-Performs a SQL update statement, using the object in it's present state.
-End users should call commit() and not need to use this directly.
-
-=back
-
-=cut
-###################################################################
+# update
+# 
+# Performs a SQL update statement, using the object in it's present state.
+# End users should call commit() and not need to use this directly.
 
 sub update {
     my $self = shift();
@@ -463,21 +382,9 @@ sub update {
     }
 }    
 
-###################################################################
-=pod
-
-=over
-
-=item commit
-
-Insert or update as required.     Returns the ID of the object,
-whether inserted new or already existing.   Could be thought of
-as an "upsert".
-
-=back
-
-=cut
-###################################################################
+# Insert or update as required.     Returns the ID of the object,
+# whether inserted new or already existing.   Could be thought of
+# as an "upsert".
 
 sub commit {
     my $self = shift();
@@ -488,12 +395,16 @@ sub commit {
     return $rc;
 }
 
+# called to remove rows in the object cache after changes are made
+
 sub invalidate_object_cache() {
     my $self = shift();
     my $class = ref($self) ? ref($self) : $self;
     # blow away all cached objects of this class
     delete $OBJECT_CACHE->{$class}; 
 }
+
+# implementation of aforementioned upsert
 
 sub _commit_db {
 
@@ -521,25 +432,15 @@ sub _commit_db {
     }
 }
 
-##################################################################
-=pod
-
-=over
-
-=item delete
-
-Deletes the item from the database.   After this is called on an object,
-the object can be recreated by calling "commit" but it will likely get a 
-new ID, so don't use objects after calling delete on them.   
-
-The internal flag __is_deleted on the object is used to flag the object as deleted.
-Some test code relies on this to do auto-cleanup of objects that have not
-been manually cleaned up.
-
-=back
-
-=cut
-##################################################################
+# delete
+#
+# Deletes the item from the database.   After this is called on an object,
+# the object can be recreated by calling "commit" but it will likely get a 
+# new ID, so don't use objects after calling delete on them.   
+# 
+# The internal flag __is_deleted on the object is used to flag the object as deleted.
+# Some test code relies on this to do auto-cleanup of objects that have not
+# been manually cleaned up.
 
 sub delete {
     my $self = shift();
@@ -569,19 +470,20 @@ sub delete {
 #
 # Currently the __is_deleted flag is not being
 # set for deleted items, however we should not be using items after we delete them anyways.
+
 sub delete_all {
     my $self = shift();
     my $criteria = shift();
     # this prevents errors like ->find_one(id => 2) which will somehow
     # make SQL::Abstract/MySQL spin wheels like crazy.  
     my $ref_type = ref($criteria);
-    die Elevator::Err::InternalError->new(text => 'criteria is not a hash/array reference') unless $ref_type eq 'ARRAY' or $ref_type eq 'HASH';
+    die 'criteria is not a hash/array reference' unless $ref_type eq 'ARRAY' or $ref_type eq 'HASH';
     
     if (
         (ref($criteria) eq 'HASH'  and scalar(keys %{$criteria}) == 0) or
         (ref($criteria) eq 'ARRAY' and scalar(@{$criteria}) == 0)
     ) {
-        die Elevator::Err::InternalError->new(text => 'criteria must contain at least 1 key');
+        die 'criteria must contain at least 1 key';
     }
     
     my $sql             = Elevator::Model::Forge->instance->sql_abstract();

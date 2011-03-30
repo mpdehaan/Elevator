@@ -1,0 +1,4 @@
+# The demo tests use a SQLite database.  Create one with sqlite3 and add the following tables.
+
+CREATE TABLE NoSqlFoo (id INT, some_integer INT, some_string TEXT);
+

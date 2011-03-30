@@ -1,3 +1,5 @@
+# tests against an example Sql-backed Elevator class
+
 package SqlFoo;
 use Test::Class;
 use base qw/Test::Class/;

@@ -1,23 +1,13 @@
-=pod
-
-=head1 NAME
-
-Elevator::Model::Roles::Serializable
-
-=head1 DESCRIPTION
-
-A Moose Role that allows an object to jsonify itself, as well as dump
-and load datastructures.
-
-=head1 SYNOPSIS
-
-   my $obj  = BaseObject->new(p1 => 'x', p2=> 'y');
-   my $json = $obj->to_json();
-   my $obj2 = BaseObject->from_json($json);
-   $obj->log_msg("something");
-
-=cut
-##########################################################################
+# Elevator::Model::Roles::Serializable
+# 
+# A Moose Role that allows an object to jsonify itself, as well as dump
+# and load datastructures.
+#
+#   my $obj  = BaseObject->new(p1 => 'x', p2=> 'y');
+#   my $json = $obj->to_json();
+#   my $obj2 = BaseObject->from_json($json);
+#   $obj->log_msg("something");
+#
 
 package Elevator::Model::Roles::Serializable;
 use Moose::Role;
@@ -148,14 +138,6 @@ use Scalar::Util;
                     $attr->set_value($obj, $new_value);
                 }
             }
-        }
-
-        # if we are called in object context, we can auto-assign the rotated table object
-        # if needed, making for less suprises later.  If this was called from Class
-        # context, we'll just find out later.
-        if (ref $self && $self->can('rotation')) {
-            die Elevator::Err::InternalError->new(text => "unable to call from_datastruct without rotation") unless $self->rotation();
-            $obj->rotation($self->rotation());
         }
 
         # return the now populated/complete object.

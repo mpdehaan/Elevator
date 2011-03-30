@@ -1,3 +1,5 @@
+# Tests against an example NoSql backed Elevator class
+
 package NoSqlFoo;
 use Test::Class;
 use base qw/Test::Class/;

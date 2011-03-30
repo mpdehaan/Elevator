@@ -1,13 +1,8 @@
 TODO
 ====
 
-* Elevator is currently being tweaked to be more generically usable
-  and as a result is not yet fully operational.  There are various
-  errors to correct and the API may be changing somewhat.
-* Elevator needs tests showing SQL, NoSQL, and memcache in action.
-     NoSql: done
-     SQL: in progress
-     Memcache: pending
+* Enhanced testing, particularly for NoSql search operations and memcache
+* Test example showing object associations.
 * Move into MooseX:: namespace
 * Package for CPAN
 * More NoSQL drivers, all additions welcome

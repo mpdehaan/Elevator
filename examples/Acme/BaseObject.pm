@@ -1,18 +1,9 @@
-=pod
-
-=head1 NAME
-
-Acme::BaseObject
-
-=head1 DESCRIPTION
-
-Example subclass for Elevator::Model::BaseObject.
-Provides organizational specific classes for data access.
-Useful classes will all then subclass this and not have to redefine those later.
-(though they could if desired).
-
-=cut
-########################################################################## 
+# Acme::BaseObject
+#
+# Example subclass for Elevator::Model::BaseObject.
+# Provides organizational specific classes for data access.
+# Useful classes will all then subclass this and not have to redefine those later.
+# (though they could if desired).
 
 use MooseX::Declare;
 
@@ -45,5 +36,6 @@ class Acme::BaseObject extends Elevator::Model::BaseObject {
     action memcache_driver() {
         return $driver_memcache;
     }
+
 }
 

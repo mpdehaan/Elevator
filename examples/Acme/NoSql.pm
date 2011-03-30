@@ -1,15 +1,7 @@
-=pod
-
-=head1 NAME
-
-Acme::NoSql
-
-=head1 DESCRIPTION
-
-Example subclass for Elevator::Drivers::Mongo 
-
-=cut
-########################################################################## 
+# Acme::NoSql
+# 
+# Example subclass for Elevator::Drivers::Mongo 
+# this represents settings Acme organization uses for MongoDB
 
 use MooseX::Declare;
 

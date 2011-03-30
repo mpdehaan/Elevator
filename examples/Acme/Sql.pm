@@ -1,15 +1,7 @@
-=pod
-
-=head1 NAME
-
-Acme::Sql
-
-=head1 DESCRIPTION
-
-Example subclass for Elevator::Drivers::Sql 
-
-=cut
-########################################################################## 
+# Acme::Sql
+# Example subclass for Elevator::Drivers::Sql 
+#
+# represents Acme org's database configuration
 
 use MooseX::Declare;
 
