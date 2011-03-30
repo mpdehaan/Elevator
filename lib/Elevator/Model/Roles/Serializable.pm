@@ -18,6 +18,7 @@ use Scalar::Util;
     sub my_attributes {
         my $self = shift();
         my $class_name = ref($self) ? ref($self) : $self;
+        # we let forge hold onto a copy but it might as well be this class
         my $attributes_copy = $Elevator::Model::Forge::ATTRIBUTES_COPY->{$class_name};
         return $attributes_copy if defined $attributes_copy;
         my @attribs = $self->meta->get_all_attributes();
@@ -28,29 +29,28 @@ use Scalar::Util;
     # optimization: is a given attribute data (should be serialized?)
     sub _does_data {
         my ($self, $attr) = @_;
-        my $attribs = $self->data_attribs($attr);
+        my $attribs = $self->_data_attribs($attr);
         return $attribs->{'does_data'};
     }
 
     # optimization: what's the writer for an attribute?
     sub _write_method_ref {
         my ($self, $attr) = @_;
-        my $attribs = $self->data_attribs($attr);
+        my $attribs = $self->_data_attribs($attr);
         return $attribs->{'write_method_ref'};
     }
 
     # optimization: what's the field name to use?
     sub _field_or_name {
         my ($self, $attr) = @_;
-        my $attribs = $self->data_attribs($attr);
+        my $attribs = $self->_data_attribs($attr);
         return $attribs->{'field_or_name'};
     }
 
-    # FIXME: private, prefix with _
     # optimization: returns metadata but only asks once per class type.  This is horrendous
     # and low level but we execute this many hundreds of times per request and therefore care
     # quite a lot.
-    sub data_attribs {
+    sub _data_attribs {
         # input is the class and a given meta attribute to get details about
         my $self = shift();
         my $attr = shift();
@@ -126,7 +126,7 @@ use Scalar::Util;
         foreach my $attr (@{$self->my_attributes()}) {
             # the custom attribute data must be true in order
             # for this field to be serialized.  Default is no.
-            my $attribs = $self->data_attribs($attr);
+            my $attribs = $self->_data_attribs($attr);
 
             if ($attribs->{'does_data'}) {
                 #my $writer = $attribs->{'write_method_ref'};

@@ -9,7 +9,6 @@ BEGIN {
 
 # BASE SUPPORT
 
-# FIXME: include other items in Elevator::Bundle::Elevator here
 use JSON::XS qw//;
 use SQL::Abstract;
 

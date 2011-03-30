@@ -322,7 +322,6 @@ sub insert {
     my $table = $self->table_name();
     $statement->execute(@bind) or croak("database insert failed ($? $!), " . Data::Dumper::Dumper $insert . " VALUES= " . Data::Dumper::Dumper \@bind);
     my $inserted = $dbh->last_insert_id(undef, undef, $table, undef);
-    # FIXME: add a BaseObject has_primary_key
     if ($self->meta->has_attribute('id')) {
         croak("failed to get insertion id") unless defined $inserted;
         $self->id($inserted);
@@ -555,12 +554,7 @@ sub invalidate_memcache {
    # NOTE: does selection criteria have default behavior?  It should.
    my $criteria = $self->selection_criteria();
 
-   # FIXME: we check to see if a table is memcacheable by seeing if it
-   # has a configured timeout.  Ideally we want to ask the class for the timeout
-   # and not have configuration in this base class. 
-
    # NOTE: doesn't disable find_all type criteria, which we *do* actually cache.
-
    if ($self->is_memcache_enabled()) {
        push @{$keys_to_invalidate}, $self->_cache_key($criteria);
    }

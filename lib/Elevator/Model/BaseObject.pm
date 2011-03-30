@@ -50,7 +50,7 @@ class Elevator::Model::BaseObject with Elevator::Model::Roles::Serializable {
     # pseudo-ORM support.
     #
     # the 'data' attribute is a speical case of Moose 'has' that creates a read write variable
-    # with an Object|Undef type (FIXME: a parameter for no undef would be nice).  While the field
+    # with an Object|Undef type.  While the field
     # in the database is an integer, this allows transparent access to the field as if it were
     # an object, traversing the foreign key and looking up the object in the other table.
     # If the actual integer is required, access via $fieldname_id is available.   
@@ -110,23 +110,19 @@ class Elevator::Model::BaseObject with Elevator::Model::Roles::Serializable {
                 }
             );
             
-            $options{isa}   = 'Str|Undef'; # FIXME: Num|Undef is probably more correct
+            $options{isa}   = 'Str|Undef'; # we allow strings but usually will be ints
             
             # if reassigning the id of the object, clear the object version
-            # FIXME: confirm that's what this does?
             $options{trigger} = sub {
                 my ($self, $new, $old) = @_;
                 if ($new) {
                     if ( $self->$predicate() && $self->$name->$key() ne $new ) {
                         $self->$clearer();
                     }
-                } else {
-                    # FIXME: should we clear the key in this case???
-                }
+                } 
              
             };
             
-            # FIXME: comments
             $actual_name = $name_key;
         }
        
@@ -170,10 +166,7 @@ class Elevator::Model::BaseObject with Elevator::Model::Roles::Serializable {
     # Return criteria needed to select the object for an update
     # or delete.  Must return undef if the object is unselectable
     # for retrieval or delete in it's present state due to not
-    # having enough unique criteria being filled in.  This is used
-    # for more than just database operations but (FIXME) can
-    # likely be moved to DbTable since that also handles object caching
-    # in memory and also memcaching.
+    # having enough unique criteria being filled in.  
 
     action selection_criteria() {
          return undef unless defined $self->id();
