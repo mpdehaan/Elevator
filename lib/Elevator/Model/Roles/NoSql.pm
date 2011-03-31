@@ -1,35 +1,23 @@
-=pod
-
-=head1 NAME
-
-Elevator::Model::Roles::NoSql
-
-=head1 DESCRIPTION
-
-A mixin providing NoSql capabilities to a class.   
-A class cannot have both NoSql and DbTable mixins, only one.
-
-=head1 SYNOPSIS
-
-   with 'NoSql'
-
-   my $obj  = Elevator::Model::SomeObject->new(p1 => 'x', p2=> 'y');
-   # the method /selection_criteria/ returns the key of the object
-
-   Elevator::Model::SomeObject->lookup($key);
-   Elevator::Model::SomeObject->find_all($criteria);
-   Elevator::Model::SomeObject->find_one($criteria);
-   $obj->commit();
-   $obj->delete();
-
-   # there is no 'retrieve' like in DbTable.
-
-=cut
-##########################################################################
+# Elevator::Model::Roles::NoSql
+# 
+# A mixin providing NoSql capabilities to a class.   
+# A class cannot have both NoSql and DbTable mixins, only one.
+#
+#   with 'NoSql'
+#
+#   my $obj  = Elevator::Model::SomeObject->new(p1 => 'x', p2=> 'y');
+#   # the method /selection_criteria/ returns the key of the object
+#
+#   Elevator::Model::SomeObject->lookup($key);
+#   Elevator::Model::SomeObject->find_all($criteria);
+#   Elevator::Model::SomeObject->find_one($criteria);
+#   $obj->commit();
+#   $obj->delete();
+#
+#   # there is no 'retrieve' like in DbTable.
 
 package Elevator::Model::Roles::NoSql;
 use Moose::Role;
-#use Method::Signatures::Simple name => 'action';
 use Carp;
 use JSON::XS;
 use Data::Dumper;

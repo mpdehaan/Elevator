@@ -54,23 +54,9 @@ our $PREPARED_STATEMENTS = {};
 # this must be explicitly enabled and is not on by default!
 local our $OBJECT_CACHE = {};
 
-###################################################################
-=pod
-
-=over
-
-=item table_name
-
-Returns the table name to be used with the DB utility functions.
-
-subclasses must override if they want the stock DB code in
-
-The function primary_table must be implemented.
-
-=back
-
-=cut
-##################################################################
+# table_name
+# 
+# Returns the table name to be used with the DB utility functions.
 
 sub table_name {
     my $self = shift();
@@ -112,28 +98,19 @@ sub _cache_key {
     return $self->table_name() . '//' . $md5->hexdigest;
 }
 
-##########################################################################
-=pod
 
-=over
-
-=item find_all & count.
-
-Given a hash of (database) parameters, return an array of objects corresponding
-to the values from the lookup.  See comments above about excluding transient
-fields with "__fieldname".   
-
-Parameters passed for $criteria are those valid to SQL::Abstract select
-statements.
-
-Count works just like find_all except it returns just an integer.  If you are
-going to need the data, don't call count, count the objects, as otherwise
-you'll be making extra calls.  Count(*) bypasses both layers of caching logic.
-
-=back
-
-=cut
-##########################################################################
+# find_all & count.
+# 
+# Given a hash of (database) parameters, return an array of objects corresponding
+# to the values from the lookup.  See comments above about excluding transient
+# fields with "__fieldname".   
+# 
+# Parameters passed for $criteria are those valid to SQL::Abstract select
+# statements.
+# 
+# Count works just like find_all except it returns just an integer.  If you are
+# going to need the data, don't call count, count the objects, as otherwise
+# you'll be making extra calls.  Count(*) bypasses both layers of caching logic.
 
 sub count {
     my ($self, $criteria, $order) = @_; 
@@ -509,24 +486,14 @@ sub delete_all {
     return $result;
 }
 
-##################################################################       
-=pod
-
-=over
-
-=item retrieve
-
-The inverse of commit(), load a new object given arbitrary criteria,
-and if it cannot be found, create it with the same criteria, returning
-the object.   
-
-NOTE:  this implies all values to criteria must
-come from the DB.   For additional values, set them after retrieval.
-
-=back
-
-=cut
-##################################################################       
+# retrieve
+#
+# The inverse of commit(), load a new object given arbitrary criteria,
+# and if it cannot be found, create it with the same criteria, returning
+# the object.   
+# 
+# NOTE:  this implies all values to criteria must
+# come from the DB.   For additional values, set them after retrieval.
 
 sub retrieve {
     my $self = shift();

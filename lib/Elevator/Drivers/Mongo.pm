@@ -1,15 +1,6 @@
-=pod
-
-=head1 NAME
-
-Elevator::Drivers::Mongo
-
-=head1 DESCRIPTION
-
-Mongo NoSql driver that corresponds with the Elevator::Model::Roles::NoSql mixin
-
-=cut
-##########################################################################
+# Elevator::Drivers::Mongo
+# 
+# Mongo NoSql driver that corresponds with the Elevator::Model::Roles::NoSql mixin
     
 use MooseX::Declare;
 

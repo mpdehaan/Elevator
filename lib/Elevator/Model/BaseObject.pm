@@ -1,28 +1,17 @@
-=pod
-
-=head1 NAME
-
-Elevator::Model::BaseObject
-
-=head1 DESCRIPTION
-
-Base OO Object.   For your application subclass this and redefine
-nosql_driver, database_driver, and memcache_driver to use appropriate
-subclasses of the classes provided in Elevator::Drivers:: such that they
-will be appropriate for your application.
-
-All BaseObject subclasses get Elevator::Roles::Serializable functionality for free.
-*most* objects will want to also use the mixin Elevator::Model::Roles::DbTable to achieve
-basic ORM functionality. 
-
-=head1 SYNOPSIS
-
-   my $obj  = BaseObject->new(p1 => 'x', p2=> 'y');
-   $obj->foo("something");
-   # see also docs in Elevator::Model::Roles::Serializable
-
-=cut
-########################################################################## 
+# Elevator::Model::BaseObject
+# 
+# Base Data Object.   For your application subclass this and redefine
+# nosql_driver, database_driver, and memcache_driver to use appropriate
+# subclasses of the classes provided in Elevator::Drivers:: such that they
+# will be appropriate for your application.
+# 
+# All BaseObject subclasses get Elevator::Roles::Serializable functionality for free.
+# *most* objects will want to also use the mixin Elevator::Model::Roles::DbTable to achieve
+# basic ORM functionality. 
+# 
+#   my $obj  = BaseObject->new(p1 => 'x', p2=> 'y');
+#   $obj->foo("something");
+#   # see also docs in Elevator::Model::Roles::Serializable
 
 BEGIN {
    # for Moose type loading purposes only.  Nothing else goes here and

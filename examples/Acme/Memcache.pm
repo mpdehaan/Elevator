@@ -1,15 +1,6 @@
-=pod
-
-=head1 NAME
-
-Acme::Memcache
-
-=head1 DESCRIPTION
-
-Example subclass for Elevator::Drivers::Sql 
-
-=cut
-########################################################################## 
+# Acme::Memcache
+# 
+# Example subclass for Elevator::Drivers::Sql 
 
 use MooseX::Declare;
 

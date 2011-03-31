@@ -1,16 +1,7 @@
-=pod
+# Elevator::Drivers::Riak
+# 
+# Riak NoSql driver that corresponds with the Elevator::Model::Roles::NoSql mixin
 
-=head1 NAME
-
-Elevator::Drivers::Riak
-
-=head1 DESCRIPTION
-
-Riak NoSql driver that corresponds with the Elevator::Model::Roles::NoSql mixin
-
-=cut
-##########################################################################
-    
 use MooseX::Declare;
 
 class Elevator::Drivers::Riak {
