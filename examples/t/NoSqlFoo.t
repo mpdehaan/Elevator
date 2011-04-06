@@ -24,7 +24,7 @@ sub _test_object {
 
 }
 
-sub test_go : Test(5) {
+sub test_go : Test(6) {
    my $self = shift();
 
    # verify that we can save an object
