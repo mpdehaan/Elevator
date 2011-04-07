@@ -63,26 +63,26 @@ sub test_basics : Test(9) {
    is($found_gn3, undef, 'able to delete node');
 
    # can I get from 1 to 3?  How long is it?  (Yes, 2)
-   my @path = $graph->path(Acme::GraphNode->new(x => 1), Acme::GraphNode->new(x => 3));
-   is(scalar @path, 2, 'is able to find a normal path between two nodes');
+   my $path = $graph->path(Acme::GraphNode->new(x => 1), Acme::GraphNode->new(x => 3));
+   is(scalar @$path, 2, 'is able to find a normal path between two nodes');
 
    # can I get from 1 to 2?  How long is it?  (Yes, 1); 
-   @path = $graph->path(Acme::GraphNode->new(x => 1), Acme::GraphNode->new(x => 2));
-   is(scalar @path, 1, 'is able to find a trivial path between two nodes');
+   $path = $graph->path(Acme::GraphNode->new(x => 1), Acme::GraphNode->new(x => 2));
+   is(scalar @$path, 1, 'is able to find a trivial path between two nodes');
 
    # can I trivially get from 1 to 1?  No, because you're already there.
-   @path = $graph->path(Acme::GraphNode->new(x => 1), Acme::GraphNode->new(x => 1));
-   is(scalar @path, 0, 'realizes that the same node is not a path');
+   $path = $graph->path(Acme::GraphNode->new(x => 1), Acme::GraphNode->new(x => 1));
+   is(scalar @$path, 0, 'realizes that the same node is not a path');
 
    # can I get from 1 to 5 after I've deleted 4?  No.
-   @path = $graph->path(Acme::GraphNode->new(x => 1), Acme::GraphNode->new(x => 5)); 
-   warn "** PATH FOUND = " . Data::Dumper::Dumper \@path;
-   is(scalar @path, 0, 'knows when it cannot find a path');
+   $path = $graph->path(Acme::GraphNode->new(x => 1), Acme::GraphNode->new(x => 5)); 
+   #warn "** PATH FOUND = " . Data::Dumper::Dumper \@path;
+   is(scalar @$path, 0, 'knows when it cannot find a path');
 
    # can I get from 1 to -3?  -3 isn't even a node, so no. 
-   @path = $graph->path(Acme::GraphNode->new(x => 1), Acme::GraphNode->new(x => -3)); 
+   $path = $graph->path(Acme::GraphNode->new(x => 1), Acme::GraphNode->new(x => -3)); 
    #warn "PATH FOUND = " . Data::Dumper::Dumper \@path;
-   is(scalar @path, 0, 'cannot find a path to a non-existant node');
+   is(scalar @$path, 0, 'cannot find a path to a non-existant node');
 
    # can I dump the entire datastructure object?
    #print $graph->to_json_str();
