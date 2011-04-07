@@ -36,8 +36,10 @@ timethese(5, { 'creation' => sub { setup() } });
 setup();
 
 sub edge_deletion {
+    # here we cheat a bit just to get Moose out of the benchmark, the node key is "GraphNode/$i"
+    # so we don't pass in a Acme::GraphNode->new(x => $i) but just the string
     for(my $i=0; $i< $TEST_SIZE - 1 ; $i++) {
-         $graph->delete_edge(Acme::GraphNode->new(x => $i), Acme::GraphNode->new(x => $i+1));
+         $graph->delete_edge('GraphNode/' . $i, 'GraphNode/' . ($i+1));
     }
 }
 
@@ -50,7 +52,7 @@ setup();
 
 sub node_deletion {
     for(my $i=0; $i< $TEST_SIZE; $i++) {
-         $graph->delete_node(Acme::GraphNode->new(x => $i))
+         $graph->delete_node('GraphNode/' . $i);
     }
 }
 
@@ -63,11 +65,20 @@ timethese(5, { 'node_deletion' => sub { node_deletion() } });
 setup();
 
 sub long_path {
-     my $path = $graph->path(Acme::GraphNode->new(x=>1), Acme::GraphNode->new(x => $TEST_SIZE-1));
+     my $path = $graph->path('GraphNode/1', 'GraphNode/' . ($TEST_SIZE - 1));
      return scalar @$path;
 }
 
 timethese(5, { 'long_path' => sub { long_path() } });
+
+setup();
+
+sub short_path {
+     my $path = $graph->path('GraphNode/5000', 'GraphNode/5020');
+     return scalar @$path;
+}   
+
+timethese(5, { 'short_path' => sub { short_path() } });
 
 ########################
 # PHASE 5:  TEST LOAD FROM DATASTRUCTURE/JSON

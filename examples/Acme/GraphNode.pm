@@ -15,7 +15,7 @@ class Acme::GraphNode extends Acme::BaseObject {
 
     # what key to use for graph indexing
     action node_key() {
-        return "GraphNode:" . $self->x();
+        return "GraphNode/" . $self->x();
     }
 
 }
