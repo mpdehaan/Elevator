@@ -4,3 +4,6 @@ test:
 
 test_graph:
 	PERL5LIB=lib:examples:examples/t perl examples/t/Graphinator.t
+
+perf_graph:
+	PERL5LIB=lib:examples:examples/t perl examples/t/GraphinatorPerf.pl

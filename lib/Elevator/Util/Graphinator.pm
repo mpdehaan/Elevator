@@ -108,7 +108,9 @@ class Elevator::Util::Graphinator extends Elevator::Model::BaseObject {
  
     # given two nodes (or two node keys) return the edge key between them
     action _edge_key($obj_a, $obj_b) {
-        if (! ref($obj_a)) {
+        croak "undefined edge" unless defined $obj_a;
+        croak "undefined edge" unless defined $obj_b;
+        if ((!ref($obj_a)) || (!ref ($obj_b))) {
             return $obj_a . '//' . $obj_b;
         }
         return $obj_a->node_key() . '//' . $obj_b->node_key();
