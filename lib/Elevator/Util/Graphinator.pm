@@ -16,6 +16,7 @@ class Elevator::Util::Graphinator extends Elevator::Model::BaseObject {
     use Carp qw/croak/;
     use Elevator::Model::BaseObject;
     use Method::Signatures::Simple name => 'action';
+    use Boost::Graph;
 
     data node_edges      => (isa => 'HashRef'); # $id => [ $edge_id, $edge_id ]
     data node_properties => (isa => 'HashRef'); # $id => { properties }
@@ -74,26 +75,27 @@ class Elevator::Util::Graphinator extends Elevator::Model::BaseObject {
     # given a node key, delete anything referencing the node
     action delete_node($obj) {
         foreach my $edge ($self->neighbor_edges($obj)) {
-            $self->_delete_edge_node_records($edge);
+            delete $self->edge_properties()->{$edge} if $self->edge_properties()->{$edge};
         }
-        $self->_delete_node_records($obj);
-    }
-
-    # internals: to avoid having semantic meaning in the name of an edge key, there's a simple
-    # set of records that says what the left and right end of each edge is.  This clears those.
-    # this also clears the property info.
-    action _delete_edge_node_records($edge) {
-       delete $self->edge_properties()->{$edge} if $self->edge_properties()->{$edge};
-    }
-
-    # internals: for fast lookups and such, we store some things redundantly.  This erases the
-    # information about a node when the node is deleted.
-    action _delete_node_records($obj) {
         my $node_key = $obj->node_key();
-        my $edges = $self->node_edges();
+        my $edges    = $self->node_edges();
         my $properties = $self->node_properties();
         delete $edges->{$node_key} if defined $edges->{$node_key};
         delete $properties->{$node_key} if defined $properties->{$node_key};
+        # make sure there's no dangling node edges that point to this node, unfortuantely
+        # this could be a little slow, to be optimized later.  Deleting edges is pretty
+        # fast though.
+        my @all_nodes = keys (%{$self->node_edges()});
+        foreach my $node (@all_nodes) {
+            my $edges = $self->node_edges()->{$node};
+            my @new_edges = ();
+            foreach my $edge (@$edges) {
+                my ($head, $tail) = $self->_edge_endpoints($edge);
+                warn "considering $head and $tail against $node_key\n";
+                push @new_edges, $tail unless $tail eq $node_key;
+            }
+            $self->node_edges->{$node} = \@new_edges;
+        }
     }
    
     # edges are stored in the internal datastructure using a combined key
@@ -101,7 +103,9 @@ class Elevator::Util::Graphinator extends Elevator::Model::BaseObject {
     # multiple direct links between A and B, to denote these semantics, make the properties
     # of the link differ. (A->B, B->A is of course fine and supported).
     action _edge_key($obj_a, $obj_b) {
-        croak "bad object" unless (ref($obj_a) && ref($obj_b));
+        if (! ref($obj_a)) {
+            return $obj_a . '//' . $obj_b;
+        }
         return $obj_a->node_key() . '//' . $obj_b->node_key();
     }
 
@@ -172,20 +176,19 @@ class Elevator::Util::Graphinator extends Elevator::Model::BaseObject {
         return $self->node_edges->{$obj->node_key()};
     }
 
-    # return the names of the nodes adjacent to this node.   
     action neighbors($obj) {
+       return $self->neighbors_by_key($obj->node_key());
+    }
+  
+    # return the names of the nodes adjacent to this node.   
+    action neighbors_by_key($node_key) {
         my $results = [];
-        my $edge_keys = $self->node_edges->{$obj->node_key()};
+        my $edge_keys = $self->node_edges->{$node_key};
         foreach my $edge (@$edge_keys) {
            my ($head, $tail) = $self->_edge_endpoints($edge);
            push @$results, $tail;
         }
         return $results;
-    }
-
-    action is_directly_connected($obj_a, $obj_b, $depth_limit) {
-        my @matches = grep { $_ eq $obj_b->node_key() } @{$self->neighbors($obj_a)};
-        return ((scalar @matches) > 0) ? 1 : 0;
     }
 
     # hash merge the node properties data alongside the walking path between A and B.
@@ -199,7 +202,7 @@ class Elevator::Util::Graphinator extends Elevator::Model::BaseObject {
     # call a given callback on all nodes for which another callback is true reachable from a current node.
     # this can be used to implement "path"
    
-    action propogate($node_key_a, $seen_nodes, $traverse_callback, $depth_limit, @accumulator_in) {
+    action propogate($node_key_a, $seen_nodes, $on_visit, $should_follow, $depth_limit, @accumulator_in) {
 
          # enforce depth limits on search and avoid revisiting nodes
          $depth_limit = 10 unless $depth_limit;
@@ -209,51 +212,57 @@ class Elevator::Util::Graphinator extends Elevator::Model::BaseObject {
 
          foreach my $edge (@{$self->node_edges->{$node_key_a}}) {
              # update accumulator at each node.  return 2 to complete, return 0 to skip, return 1 to continue to descend.
-             my $should_traverse = $traverse_callback->($self, $edge, \@accumulator);
+             #my $should_traverse = $traverse_callback->($self, $edge, \@accumulator);
              my ($head, $tail) = $self->_edge_endpoints($edge);
              #warn "considering edge $head to $tail and should_traverse is $should_traverse\n";
              #warn "   current accumulator = " . join ' , ', @accumulator;
-             return @accumulator if ($should_traverse == 2);
              next if $seen_nodes->{$tail};
-             next unless $should_traverse;
              next unless $depth_limit > 0;
-             my @rc = $self->propogate($tail, $seen_nodes, $traverse_callback, --$depth_limit, @accumulator);
-             return @rc if (scalar @rc > 0);
+             $on_visit->($self, $edge, \@accumulator);
+             if ($should_follow->($self, $edge, \@accumulator)) {
+                 $self->propogate($tail, $seen_nodes, $on_visit, $should_follow, --$depth_limit, @accumulator);
+             } else {
+                 return;
+             }
          };
 
          #warn "END OF PROPOGATE\n";
-         return ();
+         return;
     }
 
-    # return the edge names between A and B, or undef if no pat
-    # this only returns the first found path, we'll need another implementation for shortest paths or all paths
-    # if we need that.  
+    # convert arrayref of node names to array of edge names
+    
+    action _nodes_to_edges($path) {
+        my $index = 0;
+        my @results = ();
+        foreach my $node (@$path) {
+            unless ($index == (scalar @$path) - 1) {
+                push @results, $self->_edge_key($node, $path->[$index+1]);
+            };
+            $index++;
+        }
+        return @results;
+    }
+
+    # FIXME: signature may need some help
+    # return the edge names between A and B, or undef if no path
 
     action path($obj_a, $obj_b, $depth_limit) {
-         my @accumulator_in = ();
-         my $seen_nodes = {};
-         # update accumulator at each node.  return 2 to complete, return 0 to skip, return 1 to continue to descend.
-         my $traverse_callback = sub {
-               my ($graphinator, $edge_key, $accumulator) = @_;
-               my ($edge_head, $edge_tail) = $self->_edge_endpoints($edge_key);
-               #warn "pushing onto accumulator ... $edge_key";
-               push @$accumulator, $edge_key;
-               if ($edge_tail eq $obj_b->node_key()) {
-                    return 2;
-               }
-               # FIXME -- is this right?
-               return 1;
-         };
-         # FIXME: make accumulator be a reference and copy it, and tolerate it being a hash or an array
 
-         my @results = $self->propogate($obj_a->node_key(), $seen_nodes, $traverse_callback, $depth_limit, @accumulator_in);
-         # we now have the edges upon the possibly successful path in $accumulator.  We need to determine if the last
-         # edge tails out into $obj_b to know it's really successful.
-         #warn "RAW RESULTS = " . join ',', @results;
-         return undef unless (scalar @results > 0);
-         #warn "LAST EDGE = " . $results[-1] . "\n";
-         my ($head_result, $tail_result) = $self->_edge_endpoints($results[-1]);
-         return ($tail_result eq $obj_b->node_key()) ? @results : undef;
+         my $booster = Boost::Graph->new(directed => 1);
+         my @nodes   = keys %{$self->node_properties()};
+         my @edges   = keys %{$self->edge_properties()};
+
+         foreach my $node (@nodes) {
+             $booster->add_node($node);
+         }
+         foreach my $edge (@edges) {
+             my ($head, $tail) = $self->_edge_endpoints($edge);
+             $booster->add_edge($head, $tail);
+         }
+         my $node_path = $booster->dijkstra_shortest_path($obj_a->node_key(), $obj_b->node_key());
+         return () unless $node_path;
+         return $self->_nodes_to_edges($node_path->{path});
     }
 
     # call a given function on all edges between A and B
