@@ -15,6 +15,7 @@ Memcache:
 * add tests for memcache
 
 NoSQL:
+* Currently working on Neo4j support
 * More NoSQL drivers, all additions welcome
 * Memcache frontage for NoSQL (like DbTable), if it makes sense?
 
