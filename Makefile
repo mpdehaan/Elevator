@@ -2,8 +2,10 @@ test:
 	PERL5LIB=lib:examples:examples/t perl examples/t/SqlFoo.t
 	PERL5LIB=lib:examples:examples/t perl examples/t/NoSqlFoo.t
 
-test_graph:
+test_graphinator:
 	PERL5LIB=lib:examples:examples/t perl examples/t/Graphinator.t
-
-perf_graph:
 	PERL5LIB=lib:examples:examples/t perl examples/t/GraphinatorPerf.pl
+
+test_neo:
+	PERL5LIB=lib:examples:examples/t perl examples/t/Neo.t
+

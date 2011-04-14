@@ -1,21 +1,38 @@
-# example Graph Node class, for illustrating Graphinator.  This could mixin either NoSql or DbTable.
-# here it doesn't do either because it is just for the tests.
+# Acme::GraphNode
+#
+# Example node for Graph database (Neo4j) testing.
+# Notice we override the default NoSql driver from BaseObject in this class.
 
 use MooseX::Declare;
 
-class Acme::GraphNode extends Acme::BaseObject {
- 
+class Acme::GraphNode extends Elevator::Model::BaseObject with Elevator::Model::Roles::NoSql {
+
     use Method::Signatures::Simple name => 'action';
-    use Acme::BaseObject;
+    use Elevator::Model::BaseObject;
 
-    # database fields are all marked with 'data'
-    data x            => (isa => 'Int');
-    data y            => (isa => 'Int');
-    data z            => (isa => 'Int');
+    data some_integer => (isa => 'Int');
+    data some_string  => (isa => 'Str');
+    data some_hash    => (isa => 'HashRef');
+    data some_array   => (isa => 'ArrayRef');
+    data some_keyval  => (isa => 'Str');
 
-    # what key to use for graph indexing
-    action node_key() {
-        return "GraphNode/" . $self->x();
+    # organizational specific driver imports
+    use Acme::GraphDb;
+    our $driver_graphdb  = Acme::GraphDb->new();
+
+    # default BaseObject uses Mongo, this one uses Neo4j
+    action nosql_driver() {
+        return $driver_graphdb;
     }
 
+    # needed by NoSQL role to make a unique ID
+    action bucket_name() {
+        return 'GraphNode';
+    };
+
+    # needed by NoSQL role to make a unique ID
+    action bucket_key() {
+        return $self->some_keyval();
+    }
 }
+

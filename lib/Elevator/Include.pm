@@ -25,6 +25,7 @@ use Elevator::Drivers::Riak;
 use Elevator::Drivers::Mongo;
 use Elevator::Drivers::Sql;
 use Elevator::Drivers::Memcache;
+use Elevator::Drivers::Neo4j;
 
 # Roles
 

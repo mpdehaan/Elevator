@@ -69,6 +69,7 @@ class Elevator::Drivers::Riak {
              warn "Riak response: " . $response->content();
              die $response->status_line();
          }
+         return undef; # no extended properties to store for this driver
     }
 
     # delete a single key

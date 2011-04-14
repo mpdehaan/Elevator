@@ -9,7 +9,7 @@ use Acme::GraphNode;
 use Elevator::Util::Graphinator;
 use Benchmark;
 
-my $TEST_SIZE = 10_000;   
+my $TEST_SIZE = 5_000;   
 my $graph = Elevator::Util::Graphinator->new();
 
 #######################

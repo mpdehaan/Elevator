@@ -55,6 +55,7 @@ class Elevator::Drivers::Mongo {
         } else {
 	   $self->_handle($bucket_name)->insert($data);
         }
+        return undef; # no extended properties to store for this driver
     }
 
     # delete a single key

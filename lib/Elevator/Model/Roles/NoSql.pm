@@ -25,8 +25,7 @@ use Elevator::Model::Forge;
 use Elevator::Drivers::Riak;
 use Elevator::Drivers::Mongo;
 
-# the NoSql mixin supports multiple NoSql drivers, the default is Riak
-# and currently there are no other drivers.
+# the NoSql mixin supports multiple NoSql drivers, the default is Mongo.
 our $riak_driver = Elevator::Drivers::Riak->new();
 our $mongo_driver = Elevator::Drivers::Mongo->new();
 
@@ -38,6 +37,12 @@ requires 'bucket_name';
 requires 'bucket_key';
 requires 'to_datastruct';
 requires 'from_datastruct';
+
+# some NoSql drivers may set data on the objects they return, for instance, creation in Neo4j
+# returns a boatload of REST URLs that can be used on the object.  Usage of this data is implementation
+# dependent.
+
+has extended_nosql_data => (is => 'rw', isa => 'HashRef');
 
 # classes get the Riak driver unless they specify a different one.
 sub nosql_driver {
@@ -130,7 +135,14 @@ sub commit {
     my $self = shift();
     $self->pre_commit(); # run validation hooks if any, on the object
     my $driver = $self->nosql_driver();
-    $self->nosql_driver()->save_one($self->bucket_name(), $self->bucket_key(), $self);
+    my $results = $self->nosql_driver()->save_one($self->bucket_name(), $self->bucket_key(), $self);
+    # this is *mostly* a Neo4j thing, but other drivers may want to do it... If save one returns anything, and it's JSONable, 
+    # store in extended_nosql_data in the object.
+    if (defined $results) {
+        #warn "UPDATING EXTENDED NOSQL DATA: $results\n";
+        my $data = Elevator::Model::Forge->instance->json->decode($results);
+        $self->extended_nosql_data($data);
+    }
     return $self;
 }    
 

@@ -12,6 +12,7 @@
 package Elevator::Model::Roles::Serializable;
 use Moose::Role;
 use JSON::XS;
+use Elevator::Model::Forge;
 use Scalar::Util;
 
     # don't lookup meta attributes more than once, it's expensive.
