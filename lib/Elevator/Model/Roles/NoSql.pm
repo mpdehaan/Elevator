@@ -83,7 +83,7 @@ sub by_key {
     return undef unless defined $raw_data;
     unless (ref($raw_data)) {
         $raw_data = Elevator::Model::Forge->instance->json->decode($raw_data);
-    } 
+    }
     return $self->_data_to_object($raw_data);
 }
 
@@ -137,7 +137,8 @@ sub commit {
     my $driver = $self->nosql_driver();
     my $results = $self->nosql_driver()->save_one($self->bucket_name(), $self->bucket_key(), $self);
     # this is *mostly* a Neo4j thing, but other drivers may want to do it... If save one returns anything, and it's JSONable, 
-    # store in extended_nosql_data in the object.
+    # store in extended_nosql_data in the object.  Note on find operations we just request the driver include a extended_nosql_data
+    # attribute.  Neo4j is the odd one out here because on save it returns URL info we may need to use later.
     if (defined $results) {
         #warn "UPDATING EXTENDED NOSQL DATA: $results\n";
         my $data = Elevator::Model::Forge->instance->json->decode($results);
@@ -159,6 +160,43 @@ sub delete {
 sub delete_all {
     my ($self, $criteria) = shift();
     return $self->nosql_driver()->delete_all($self->bucket_name(), $criteria);
+}
+
+# add a link between two nodes
+# only supported for GraphDB NoSQL implementations
+
+sub add_link_to {
+   my ($self, $other) = @_;
+   return $self->nosql_driver()->delete_all($self, $other);
+}
+
+# make this object *not* link to another object.
+# deletes any outgoing links, regardless of type
+# we may later need to change this to support removing links of only certain types
+# or only links with certain data elements
+# only supported for GraphDB NoSQL implementations
+
+sub remove_links_to {
+   my ($self, $other) = @_;
+   return $self->nosql_driver()->remove_links_to($self, $other);
+}
+
+# what are the links leading out of this node?
+# returns a list like [[ "type", "key" ], ... ] 
+# only supported for GraphDB NoSQL implementations
+
+sub list_links_from {
+   my ($self) = @_;
+   return $self->nosql_driver()->list_links_from($self);
+}
+
+# what are the links leading into this node?
+# returns a list like [[ "type", "key" ], ... ]
+# only supported for GraphDB NoSQL implementations
+
+sub list_links_to {
+   my ($self) = @_;
+   return $self->nosql_driver()->list_links_to($self);
 }
 
 1;

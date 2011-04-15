@@ -39,7 +39,7 @@ class Elevator::Model::Forge {
     has 'sql_abstract'                  => (is => 'rw', lazy => 1, builder => '_make_sql_abstract');
     
     action _make_json {
-       return JSON::XS->new()->allow_nonref(1)->canonical(1);
+       return JSON::XS->new()->canonical(1);
     }
     
     action _make_now {

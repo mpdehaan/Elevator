@@ -12,7 +12,9 @@ class Acme::GraphNode extends Elevator::Model::BaseObject with Elevator::Model::
 
     data some_integer => (isa => 'Int');
     data some_string  => (isa => 'Str');
-    data some_hash    => (isa => 'HashRef');
+    # Neo4j seems to dislike hashrefs?
+    # data some_hash    => (isa => 'HashRef');
+    
     data some_array   => (isa => 'ArrayRef');
     data some_keyval  => (isa => 'Str');
 
