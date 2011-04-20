@@ -13,15 +13,13 @@ use Acme::GraphNode;
 
 sub _test_object {
    my ($self, $key, $someval) = @_;
-#   my %some_hash = ( hi => 'mom' );
    my $gn =  Acme::GraphNode->new({
        some_integer => 2,
        some_string  => $someval || '?',
-# currently experiencing some code problems with hashes in the Neo4j storage not being references
+       some_hash    => { 'hi' => 'mom' },
        some_array   => [ 1, 2, 3 ],
        some_keyval  => $key,
    });
-#   $gn->some_hash(\%some_hash);
    return $gn;
 
 }
@@ -45,9 +43,8 @@ sub test_go : Test(6) {
    # verify that we can fetch an object by key
    my $fetched = Acme::GraphNode->by_key('narf');
    ok(defined $fetched, "got an object back from by_key");
-   my $ds1 = $fetched->to_datastruct();
-   warn "GOT BACK: " . Data::Dumper::Dumper $ds1;
-   is(scalar @{$ds1->{some_array}}, 3, 'got data back');
+   #my $ds1 = $fetched->to_datastruct();
+   is($fetched->to_json_str(), $foo->to_json_str(), 'are things the same once retrieved');
 
    # verify that we can delete what we've inserted
    # also that requesting an object that is not there returns undef
