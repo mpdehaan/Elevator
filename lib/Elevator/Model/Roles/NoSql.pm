@@ -42,7 +42,7 @@ requires 'from_datastruct';
 # returns a boatload of REST URLs that can be used on the object.  Usage of this data is implementation
 # dependent.
 
-has extended_nosql_data => (is => 'rw', isa => 'HashRef');
+has extended_nosql_data => (is => 'rw', isa => 'HashRef', traits => ['Elevator::Model::Traits::Data']);
 
 # classes get the Riak driver unless they specify a different one.
 sub nosql_driver {
@@ -166,8 +166,8 @@ sub delete_all {
 # only supported for GraphDB NoSQL implementations
 
 sub add_link_to {
-   my ($self, $other) = @_;
-   return $self->nosql_driver()->delete_all($self, $other);
+   my ($self, $other, $type) = @_;
+   return $self->nosql_driver()->add_link_to($self, $other, $type);
 }
 
 # make this object *not* link to another object.

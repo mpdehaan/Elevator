@@ -3,10 +3,10 @@
 # Neo4j NoSql driver that corresponds with the Elevator::Model::Roles::NoSql mixin
 # this is actually a graph database, but it lines up enough to use the NoSql mixn
 # and it's better than having an additional GraphDB mixin.
-
+#
 # for reference, some properties returned when creating nodes.  These are eventually stored
 # in 
-
+#
 #  "outgoing_relationships" : "http://127.0.0.1:7474/db/data/node/26/relationships/out",
 #  "data" : {
 #    "some_array" : [ "1", "2", "3" ],
@@ -123,6 +123,15 @@ class Elevator::Drivers::Neo4j {
                 }
             }
         }
+        # this is ugly hack, but it seems Neo4j sometimes doesn't return the self element.  If it doesn't
+        # we can get the self URL by taking "/properties" off of the properties element.
+        if (!defined $new_result->{'extended_nosql_data'}->{'self'}) {
+             warn "digging for properties";
+             my $props = $new_result->{'extended_nosql_data'}->{'properties'};
+             $props =~ s/\/properties//;
+             $new_result->{'extended_nosql_data'}->{'self'} = $props;
+        }
+        warn "THE HASH I AM DONE MANGLING IS: " . Data::Dumper::Dumper $new_result;
         return $new_result;
     }
 
@@ -259,18 +268,28 @@ class Elevator::Drivers::Neo4j {
    # add a link between two nodes
    # objects both must have already been commited and populated with their Neo4j internals.
    # in other words, call "by_key" on both of them to ensure you've got that.
-   # calling code has the responsibility of ensuring no duplicate link exists for now
+   # if you just new them both, we won't know their internal neo4j IDs.
+   # calling code has the responsibility of ensuring no duplicate link exists for now, i.e.
+   # we could easily create 50000 connections between two nodes if we don't implement here.
    # FIXME: use find_links methods to prevent sending duplicate call first if link is already there.
-   action  add_link_to($other, $link_type) {
 
-       # FIXME: ensure linktype is passed in role
-       #my $url_of_second = $other->extended_nosql_data->{'self'};
-       #my $packet = {
-       #   to  => $url_of_second,
-       #   type => $link_type,
-       #};
-       #my $response = $self->_agent()->put($add_link_url, $packet); # again, not JSON?
+   action add_link_to($first, $other, $link_type) {
 
+       # FIXME: ensure linktype is passed in
+
+       my $add_link_url = $first->extended_nosql_data->{'create_relationships'};
+       my $url_of_second = $other->extended_nosql_data->{'self'};
+       # my $add_link_url  = $url_of_first . '/relationships';
+
+       my $packet = {
+          to   => $url_of_second,
+          type => $link_type,
+       };
+       my $response = $self->_agent()->post($add_link_url, $packet); 
+       unless ($response->is_success()) {
+          die "Neo4j: " . $response->content();
+       }
+       warn "* Neo4j add_link_to ok: " . $response->content();
    }
 
    # make this object *not* link to another object.

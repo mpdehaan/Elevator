@@ -49,35 +49,29 @@ sub test_go : Test(6) {
    # verify that we can delete what we've inserted
    # also that requesting an object that is not there returns undef
 
+   warn "BOOKMARK 1 ----\n";
+
    $fetched->delete();
    $fetched = Acme::GraphNode->by_key('narf');
    is($fetched, undef, "retrieving something that is not there returns undef");   
 
    # verify that it's cool to delete something that isn't there
+   warn "BOOKMARK 2 ----\n";
 
    $self->_test_object('narf')->delete();
    ok(1, "delete of non-existant content did not explode");
    
-   # TODO: verify that we can search without preparation and return a list of elements
-   $self->_test_object('narf','a')->commit();
-   $self->_test_object('troz','a')->commit();
-   $self->_test_object('poyk','b')->commit();
-   $self->_test_object('egad','c')->commit();
-   $fetched = Acme::GraphNode->by_key('troz');
-
-   # verify we can do a batch find.
-   $self->_test_object('foo','x')->commit();
-   $self->_test_object('bar','x')->commit();
-   $self->_test_object('baz','x')->commit();
-   $self->_test_object('glorp','x')->commit();
-   
-   #my $all = Acme::GraphNode->find_all({ some_string => 'x' });
-   #foreach my $item (@$all) {
-   #    warn $item->to_json_str();
-   #} 
-   #ok(scalar @$all >= 4, "sufficient results returned");
-
    # TODO: verify that we can add a link coming off of a node
+   warn "BOOKMARK 3 ----\n";
+   $self->_test_object('uno')->commit();
+   $self->_test_object('dos')->commit();
+   # we must retrieve what we sent to get the internal Neo4j node IDs
+   warn "BOOKMARK 4 ----\n";
+   my $one = Acme::GraphNode->by_key('uno');
+   my $two = Acme::GraphNode->by_key('dos');
+   warn "BOOKMARK 5 ----\n";
+   $one->add_link_to($two, 'FRIENDS');
+   ok(1, 'adding a link did not explode');
 
    # TODO: verify we can list links coming off of nodes (and get objects back)
 
