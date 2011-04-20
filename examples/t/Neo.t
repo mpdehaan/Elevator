@@ -45,7 +45,9 @@ sub test_go : Test(6) {
    # verify that we can fetch an object by key
    my $fetched = Acme::GraphNode->by_key('narf');
    ok(defined $fetched, "got an object back from by_key");
-   is($fetched->to_json_str(), $foo->to_json_str(), "same data sent as stored");
+   my $ds1 = $fetched->to_datastruct();
+   warn "GOT BACK: " . Data::Dumper::Dumper $ds1;
+   is(scalar @{$ds1->{some_array}}, 3, 'got data back');
 
    # verify that we can delete what we've inserted
    # also that requesting an object that is not there returns undef

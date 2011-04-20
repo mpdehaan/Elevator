@@ -78,6 +78,8 @@ class Elevator::Drivers::Neo4j {
         my $results = $self->__index_search({ __key => $self->_key_for_strings($bucket_name, $bucket_key) });
         return undef unless defined $results;
         my $json_results = Elevator::Model::Forge->instance->json->decode($results);
+        # the JSON that we get back actually has a subelement called 'json' that we do because we want to protect
+        # our original data from Neo4j's weird "I prefer encodings as POST DATA" preferences (appparent, not proven).
         my $result_count = scalar @$json_results;
         warn "[?] find results returned = $result_count\n";
         return undef unless ($result_count > 0);
@@ -92,24 +94,34 @@ class Elevator::Drivers::Neo4j {
         }
         # if more than one result is returned, immediately deal with the problem by removing the duplicate results.
 
+        warn "DEBUG: INPUT RESULT = " . Data::Dumper::Dumper $json_results;
         my $result = $self->__unmangle_neo4j_hash($json_results->[0]);
-        warn "RAW HASH RESULTS FOR find_by_key($bucket_name, $bucket_key)" . Data::Dumper::Dumper($results);
+        # warn "RAW HASH RESULTS FOR find_by_key($bucket_name, $bucket_key)" . Data::Dumper::Dumper($results);
         return $result;
     }
     
     # Neo4j returns a lot of extended info and the actual data is inside a 'data' subhash
+    # because of the way we post, this 'data' subhash has a key called json, and our real data lies within THAT.
     # we'll mangle the returns and return the data as the outer hash with the extended data
     # in a 'extended_nosql_data' subhash. 
 
     action __unmangle_neo4j_hash($single_result) {
         my $new_result = { extended_nosql_data => {} };
+        #warn "DEBUG: RAW SINGLE RESULT = " . Data::Dumper::Dumper $single_result;
         foreach my $key (keys(%$single_result)) {
             unless ($key eq 'data') {
                $new_result->{extended_nosql_data}->{$key} = Clone::clone $single_result->{$key}; 
             } 
-        }
-        foreach my $key2 (keys(%{$single_result->{data}})) {
-            $new_result->{$key2} = Clone::clone $single_result->{data}->{$key2};
+            else {
+                my $data_block = $single_result->{'data'}->{'json'};
+                if ($data_block) {
+                    warn "* decoding json: $data_block\n";
+                    my $decoded    = Elevator::Model::Forge->instance->json->decode($data_block);
+                    foreach my $dkey (keys %$decoded) {
+                        $new_result->{$dkey} = $decoded->{$dkey};
+                    }
+                }
+            }
         }
         return $new_result;
     }
@@ -152,13 +164,16 @@ class Elevator::Drivers::Neo4j {
         my $data = $obj->to_datastruct();
         $data->{'__key'} = $self->_key_for_object($obj);
         my $url = $self->_node_url();
-        #my $response = $self->_agent()->post($url, $obj->to_json_str());
-        # while it says it likes JSON, it really seems to want key/value pairs
-        # this really makes no sense
-        my $response = $self->_agent()->post($url, $obj->to_datastruct());
-        #warn "DEBUG: transmitting JSON of: " . $obj->to_json_str() . "\n";
+        # because Neo4j doesn't like JSON submissions in some cases and seems to perform POSTS and then proceeds
+        # to mangle scalar numbers into strings, etc, it's safest if we just store JSON in it and not data directly.
+        # hence one additional level of indirection.
+        my $json = $obj->to_json_str();
+        my $post_data = {
+             'json' => $json,
+        };
+        my $response = $self->_agent()->post($url, $post_data);
         unless ($response->is_success()) {
-            #warn "Neo4j response: " . $response->content();
+            warn "Neo4j response: " . $response->content();
             die $response->status_line();
         }
 
@@ -200,6 +215,7 @@ class Elevator::Drivers::Neo4j {
     action delete_by_key($bucket_name, $bucket_key) {
         my $hash_data = $self->find_by_key($bucket_name, $bucket_key);
         return 0 unless defined $hash_data;
+        warn "DEBUG: hash data = " . Data::Dumper::Dumper $hash_data;
         die "missing extended info?" unless $hash_data->{extended_nosql_data};
         my $self_url = $hash_data->{extended_nosql_data}->{self};
         die "missing extended info(2)?" unless $self_url;
