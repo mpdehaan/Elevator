@@ -40,7 +40,7 @@ requires 'from_datastruct';
 
 # some NoSql drivers may set data on the objects they return, for instance, creation in Neo4j
 # returns a boatload of REST URLs that can be used on the object.  Usage of this data is implementation
-# dependent.
+# dependent. (NOTE: Neo4j support has been removed, though this might still be useful).
 
 has extended_nosql_data => (is => 'rw', isa => 'HashRef', traits => ['Elevator::Model::Traits::Data']);
 
