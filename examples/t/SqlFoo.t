@@ -12,7 +12,7 @@ use Test::More;
 use Acme::SqlFoo;
 use Acme::SqlBar;
 
-sub test_go : Test(7) {
+sub test_go : Test(10) {
    my $self = shift();
 
    # first start out with a (more clean) test scenario (more or less)
@@ -64,7 +64,38 @@ sub test_go : Test(7) {
    my $lookup = Acme::SqlFoo->find_one({ some_string => 'some object'});
    is($lookup->bar->some_string(), 'test associated lookup', 'ORM features work!');
 
-   # NOTE: in future upgrades to Elevator, we should be able to pass question objects
+   # test auto-object joining functionality.  This allows stitching objects together
+   # with a pseudo-map-reduce like syntax, fetching tables and related tables in one
+   # pass versus producing a lot of extra queries.
+
+   my $foos = Elevator::Util::Joiner->new(
+        # TODO: to be clever here, it might make sense to also specify the table name
+        # which would allow for some sharding support since we won't have an
+        # instance to ask ->table_name() to, but only the class.
+        unite => [
+             [ 'foo' => 'Acme::SqlFoo' ],
+             [ 'bar' => 'Acme::SqlBar' ]
+        ],
+        where      => { 'foo.bar' => \'= bar.id' },
+        stitching  => sub {
+             my $objects = shift();
+             my $foo_obj = $objects->[0]; 
+             my $bar_obj = $objects->[1];
+             $foo_obj->bar($bar_obj);
+             return $foo_obj;
+        },
+   )->go();
+
+   ok(scalar @$foos > 0, "ORM supports smart joins");
+   ok($foos->[0]->isa('Acme::SqlFoo'), "ORM smart joins return correct instances");
+
+   # note, we're about to prove we got some data back WITHOUT a database lookup.  The object
+   # cache for this test should be OFF, so (TODO/FIXME) when ready we can just remove the 
+   # delete_alls up here, and if this still gets data, we know it worked without hitting the DB.
+
+   ok(defined $foos->[0]->bar(), "ORM successfully stitched objects together");
+
+   # NOTE: in future upgrades to Elevator, we should be able to pass objects
    # into find and reasonably use object parameters to constructors instead of IDs.
    # actually you CAN pass in objects to constructors, but it's better to usually
    # pass the ID.

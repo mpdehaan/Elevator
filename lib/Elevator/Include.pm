@@ -19,6 +19,10 @@ use Elevator::Model::Traits::Data;
 use Elevator::Model::BaseObject;
 use Elevator::Model::Forge;
 
+# Util
+
+use Elevator::Util::Joiner;
+
 # Drivers
 
 use Elevator::Drivers::Riak;
