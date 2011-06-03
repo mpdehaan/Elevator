@@ -1,5 +1,8 @@
 # The Elevator data layer provides a way to turn data reads on single tables into objects, but what if we 
-# want to efficiently retrieve objects without lots of extra database calls.  While this won't work
+# want to efficiently retrieve objects without lots of extra database calls?  Normal ORMs typically do
+# this by inference or metaprogramming but we have neither of these in something this simple.
+#
+# While this won't work
 # for many-to-many relationships (just yet), here's an example usage:
 #
 #  my @foos = Elevator::Util::Joiner->join(
@@ -18,7 +21,8 @@
 #             return $foo;
 #        }
 #
-#  this somewhat like a map/reduce operation for SQL databases
+#  this returns a list of Acme::SqlFoo instances where their bar attribute
+#  is already prepopulated by the join, eliminating later lookups
 
 use MooseX::Declare;
 
@@ -34,7 +38,6 @@ class Elevator::Util::Joiner extends Elevator::Model::BaseObject {
     data stitching       => (isa => 'CodeRef', required => 1);
 
     # intermediate results based on inputs (built only once)
-    
     # ex: [ FooClass, BarClass ] 
     lazy _class_names     => (isa => 'ArrayRef');
     # ex: [ foo, bar ] ... the names of the tables being used
@@ -46,11 +49,17 @@ class Elevator::Util::Joiner extends Elevator::Model::BaseObject {
 
     # the only public function in the class, return this to get back a list of objects
     # see usage above.
-
     action go() {
-
          # we're building up q query against all tables associated with all objects
          # to get back all fields associated with all objects
+         return $self->_database_to_object_list($self->_access_database());
+
+    }
+
+    # using the input provided, construct a proper SQL query sufficient to build out all the objects
+    # and return a list of lists
+
+    action _access_database() {
 
          my $abstract = SQL::Abstract->new();
          my ($select, @bind) = $abstract->select(
@@ -58,34 +67,30 @@ class Elevator::Util::Joiner extends Elevator::Model::BaseObject {
                $self->_all_fields(),
                $self->where()
          );
-
          # get the handle from the object. In Elevator, each object CAN have a seperate handle.
          # obviously this means no joins across seperate database connections :)
-         # TODO: assert that we have at least two classes/tables to join
-
          my $sth = $self->unite->[0]->[1]->sql_driver->database_handle->prepare($select);
          $sth->execute(@bind);
+         my $data = $sth->fetchall_arrayref();
 
-         # when using fetchall_hashref you don't get back the table names as column prefixes
-         # so we have to jump through some hoops
-         # thanks PerlMonks for some pointers, though this implementation is more DB agnostic
+    }
 
-         my  $data = $sth->fetchall_arrayref();
+    # sql returns an arrayref of arrayrefs, one result for each row, each column being an element
+    # in the order of fields supplied.  What we want are a single list of objects, with other
+    # intermediate objects stitched in where neccessary.  This is the meat of the algorithm.
+    # This is where the magic happens.
+
+    action _database_to_object_list($data) {
+         # add table name prefixes on all rows
          my $all_rows = [];
          my $i = 0;
- 
-         # add table name prefixes on all rows
          foreach my $row (@$data) {
               push @$all_rows, $self->_arrayref_to_hashref($row, $self->_table_names()->[$i++]);
          }
-
          # now run our simulated map reduce like function against things.
          my $results = [];
-         foreach my $row2 (@$all_rows) {
-             push @$results, $self->stitching->($self->_objectify_row($row2));
-         }
-
-         return $results;
+         my @results = map { $self->stitching->($self->_objectify_row($_)) } @$all_rows;
+         return \@results;
     }
 
     # given a hash of database row results, return the associated objects, as a reference
